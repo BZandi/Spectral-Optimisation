@@ -2,7 +2,7 @@
 In this repository, the Matlab code is provided for optimising spectra on a 15-channel LED luminaire, using the multi-objective optimisation method. The current version of this code can optimise a spectrum with the objectives luminance and the CIExy-1931 chromaticity coordinates.
 
 **Correspondence:** [zandi@lichttechnik.tu-darmstadt.de](mailto:zandi@lichttechnik.tu-darmstadt.de)<br>
-**Google Scholar Profile:** [Babak Zandi](https://scholar.google.de/citations?user=LSA7SdAAAAAJ&hl=de))<br>
+**Google Scholar Profile:** [Babak Zandi](https://scholar.google.de/citations?user=LSA7SdAAAAAJ&hl=de)<br>
 **Twitter:** [@BkZandi](https://twitter.com/bkzandi)
 
 ## Usage
