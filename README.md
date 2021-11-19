@@ -5,7 +5,7 @@ In this repository, the Matlab code is provided for optimising spectra on a 15-c
 **Google Scholar Profile:** [Babak Zandi](https://scholar.google.de/citations?user=LSA7SdAAAAAJ&hl=de)
 **Twitter:** [@BkZandi](https://twitter.com/bkzandi)
 
-#### Usage
+## Usage
 
 In the `Matlab/Main.m file`, the target luminance and the target chromaticity coordinates can be adjusted through the value `qp`. For example, if you want to optimise a spectrum that yields a luminance of 200 cd/m2 with a CIExy-1931 chromaticity coordinate of (0.333, 0.333), type `qp = [200, 0.333, 0.333]`. In addition, you need to set the tolerance criteria. The tolerances need to be set in the `Matlab/Main.m` file and the `Matlab/A01_Methods/runOptim_GA.m` (see the Method `myOutputFunction(options, state, flag)`).
 
@@ -28,13 +28,13 @@ scores = [];
     num_channels, population_size, max_iter, max_time, last_pop, scores);
 ```
 
-#### Miscellaneous
+## Miscellaneous
 
 If you are interested in spectral optimisation of multi-channel LED luminaires, take a look at this publication:
 
 Babak Zandi, Adrian Eissfeldt, Alexander Herzog & Tran Quoc Khanh. Melanopic Limits of Metamer Spectral Optimisation in Multi-Channel Smart Lighting Systems. *Energies*.**14**, 572 (2021). MDPI. DOI: https://doi.org/10.3390/en14030527.
 
-#### License
+## License
 
 This code is licensed under [CC BY 4.0](https://github.com/BZandi/Spectral-Optimisation/blob/main/LICENSE).
 
