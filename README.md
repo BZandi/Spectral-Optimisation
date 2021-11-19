@@ -1,4 +1,4 @@
-# Spectral optimisation pipeline for multi-primary LED luminaries 
+# Spectral optimisation pipeline for multi-primary LED lighting systems 
 In this repository, the Matlab code for spectrally optimising a 15-channel LED luminaire, using a multi-objective optimisation method is provided. The current version of this code can optimise a spectrum with the objectives luminance and the CIExy-1931 chromaticity coordinates.
 
 **Correspondence:** [zandi@lichttechnik.tu-darmstadt.de](mailto:zandi@lichttechnik.tu-darmstadt.de)<br>
