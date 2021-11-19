@@ -20,7 +20,6 @@ max_iter = 100000; % Count of iterations (Generations) of the optimisation
 max_time = 1200; % Maximum optimisation time in seconds
 last_pop = [];
 scores = [];
-% --------------------------------------
 
 % Run the optimisation
 % Note that you need to adjust the tolerances in the myOutputFunction() inside
