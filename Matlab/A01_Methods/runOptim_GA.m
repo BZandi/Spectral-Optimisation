@@ -1,5 +1,5 @@
 % Author: Babak Zandi, Laboratory of Lighting Technology, TU Darmstadt
-% License CC BY 4.0
+% License GNU GPLv3
 % https://github.com/BZandi/Spectral-Optimisation
 
 function [x, fval, exitflag, output, last_population, scores] = runOptim_GA(qp, num_channels, population_size, max_iter, max_time, last_pop, scores)

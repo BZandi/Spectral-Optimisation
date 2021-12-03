@@ -36,5 +36,5 @@ Babak Zandi, Adrian Eissfeldt, Alexander Herzog & Tran Quoc Khanh. Melanopic Lim
 
 ## License
 
-This code is licensed under [CC BY 4.0](https://github.com/BZandi/Spectral-Optimisation/blob/main/LICENSE).
+This code is licensed under [![GPL3](https://img.shields.io/badge/License-GNU%20GPLv3-blue"/)](https://choosealicense.com/licenses/gpl-3.0/#)
 

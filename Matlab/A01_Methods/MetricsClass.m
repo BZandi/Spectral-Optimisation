@@ -1,5 +1,5 @@
 % Author: Babak Zandi, Laboratory of Lighting Technology, TU Darmstadt
-% License CC BY 4.0
+% License GNU GPLv3
 % https://github.com/BZandi/Spectral-Optimisation
 %{
 Additional information:
