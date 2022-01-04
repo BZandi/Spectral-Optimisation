@@ -51,12 +51,10 @@ elseif strcmp(ObjectiveClass, 'Receptorsignals')
     Melanopic_Tolerance_Buffer = tolerance(5);
 end
 
-global NumIteration;
+global NumIteration
 InitialPopSize_Buffer = population_size;
-global NumSol_Buffer; % Number of found solutions that meet the criteria
-global Population_Archiv_Buffer;
-global IterTime_Buffer;
-IterTime_Buffer = [];
+global NumSol_Buffer % Number of found solutions that meet the criteria
+global Population_Archiv_Buffer
 TotalOptimTime_Seconds_Buffer = [];
 ObjectiveClass_Buffer = ObjectiveClass;
 OptimiserClass_Buffer = {'MuliObjGA'};
@@ -77,10 +75,7 @@ end
 
 % Create an object of the metrics class to calculate the metrics from the spectra
 MetricsObject = MetricsClass();
-
-if Logging == 1
-    MetricsObject_LuxPy = MetricsClass_LuxPy(); % Caution: read Matlab/A01_Methods/MetricsClass_LuxPy.m before using.
-end
+MetricsObject_LuxPy = MetricsClass_LuxPy(); % Caution: read Matlab/A01_Methods/MetricsClass_LuxPy.m before using.
 
 % Define upper and lower boundaries for the optimisation
 problem.nvars = num_channels;
@@ -148,7 +143,7 @@ problem.options = optimoptions(problem.options, 'MaxStallGenerations', Inf);
 problem.options = optimoptions(problem.options, 'MaxTime', max_time);
 
 tStart = tic;
-TStart_Global_PosiXTime = posixtime(datetime('now'));
+posixtime(datetime('now'))
 [x,fval,exitflag,output,last_population,scores] = gamultiobj(problem);
 
 TotalOptimTime_Seconds = toc(tStart);
@@ -206,10 +201,6 @@ if Logging == 1
     OptimSummaryTable.numberSpectraThreshold(:) = numberSpectraThreshold_GA;
     OptimSummaryTable.NumSol(:) = NumSol_Buffer;
     OptimSummaryTable.Metameric_Tuning_MelEDI(:) = 0;
-    
-    IterTime_Buffer(1:3) = []; % First three time values are not valid for logging
-    IterTime_Buffer = [IterTime_Buffer; TotalOptimTime_Seconds]; % Add last runtime cycle
-    OptimSummaryTable.IterOptimTime_Seconds = IterTime_Buffer;
     OptimSummaryTable.TotalOptimTime_Seconds(:) = TotalOptimTime_Seconds;
     
     for i = 1:length(fieldnames(Population_Archiv_Buffer))
@@ -328,24 +319,20 @@ else
 end
 
 clear global;
-
+% TODO: Iteration time
+% TODO: 
 % ============================================================================================
 % ============================================================================================
 % ============================================================================================
 
     function [F] = myObjectives(X)
         
-        if Logging == 1
-        CurrentTime = posixtime(datetime('now'));
-        IterTime_Buffer = [IterTime_Buffer;CurrentTime-TStart_Global_PosiXTime];
-        end
-        
         if Lum == 15
             CurrentSpectra = LumObject.get_CH15Spec_Vec(X);
         elseif Lum == 11
             CurrentSpectra = LumObject.get_CH11Spec_Vec(X);
         end
-        
+        CurrentTime
         Metrics = MetricsObject.getMetrics_Vec(CurrentSpectra);
         
         if strcmp(ObjectiveClass, 'Luminance_CIExy_1931_2')

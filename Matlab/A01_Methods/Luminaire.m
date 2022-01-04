@@ -1,6 +1,7 @@
 % Author: Babak Zandi, Laboratory of Lighting Technology, TU Darmstadt
-% License GNU GPLv3
-% https://github.com/BZandi/Spectral-Optimisation
+% Licence GNU GPLv3
+% Source of code: https://github.com/BZandi/Spectral-Optimisation
+
 classdef Luminaire<handle
     % Kanal 1: Ultraviolet - 420 nm
     % Kanal 2: Royal Blue - 450 nm

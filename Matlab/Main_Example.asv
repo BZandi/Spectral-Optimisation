@@ -1,6 +1,6 @@
 % Author: Babak Zandi, Laboratory of Lighting Technology, TU Darmstadt
-% License GNU GPLv3
-% https://github.com/BZandi/Spectral-Optimisation
+% Licence GNU GPLv3
+% Source of code: https://github.com/BZandi/Spectral-Optimisation
 
 % Add the folder to path
 addpath("A00_Data/")
@@ -116,12 +116,13 @@ ObjectiveClass = 'Luminance_CIExy_1931_2'; % Can also be 'Luminance_CIEuv_1976_2
 % Stoping criterium can also be the number of found spectra
 % Break if you find this number of spectra
 NumberSpectra = 20;
+Logging = 1; % Indicate if you wish to log the results
 % =============================================================
 
 % Run the optimisation
 % Note that you need to adjust the tolerances in the myOutputFunction() inside
 % the runOptim_GA() function. Currently the thresholds are set to "tolerance = [0.1, 0.0001, 0.0001]"
-[x, fval, exitflag, output, last_population, scores] = runOptim_GA(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
+[Logging_PopulationArchiv, Logging_OptimSummary, x, fval, exitflag, output, last_population, scores] = runOptim_GA(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
     num_channels, population_size, max_iter, max_time, last_pop, scores);
 
 % The population needs to be filtered to show only the code value results that filled the threshold conditions
@@ -149,7 +150,7 @@ tolerance = [0.1, 0.0001, 0.0001];
 Lum = 11; % We use a 11-channel LED luminiare
 num_channels = 11; % We use a 11-channel LED luminiare
 population_size = 5000; % Size of the initial population
-max_iter = 100000; % Count of iterations (Generations) of the optimisation
+max_iter = 50; % Count of iterations (Generations) of the optimisation
 max_time = 1200; % Maximum optimisation time in seconds
 last_pop = [];
 scores = [];
@@ -157,13 +158,13 @@ ObjectiveClass = 'Luminance_CIExy_1931_2'; % Can also be 'Luminance_CIEuv_1976_2
 
 % Stoping criterium can also be the number of found spectra
 % Break if you find this number of spectra
-NumberSpectra = 20;
+NumberSpectra = 2;
 % =============================================================
 
 % Run the optimisation
 % Note that you need to adjust the tolerances in the myOutputFunction() inside
 % the runOptim_GA() function. Currently the thresholds are set to "tolerance = [0.1, 0.0001, 0.0001]"
-[x, fval, exitflag, output, last_population, scores] = runOptim_GA(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
+[Logging_PopulationArchiv, Logging_OptimSummary, x, fval, exitflag, output, last_population, scores] = runOptim_GA(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
     num_channels, population_size, max_iter, max_time, last_pop, scores);
 
 % The population needs to be filtered to show only the code value results that filled the threshold conditions
