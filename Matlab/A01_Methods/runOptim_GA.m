@@ -1,6 +1,6 @@
 % Author: Babak Zandi, Laboratory of Lighting Technology, TU Darmstadt
 % Licence GNU GPLv3
-% https://github.com/BZandi/Spectral-Optimisation
+% Source of code: https://github.com/BZandi/Spectral-Optimisation
 
 function [Logging_PopulationArchiv, Logging_OptimSummary, x, fval, exitflag, output, last_population, scores] = runOptim_GA(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
     num_channels, population_size, max_iter, max_time, last_pop, scores, Logging)
@@ -313,7 +313,6 @@ if Logging == 1
         % Save caluclations of the current round
         Population_Archiv_Buffer.(['Iteration_' num2str(i)]) = CurrentTable;
         fprintf('Logging step [%d / %d] is finished. \n', i, length(fieldnames(Population_Archiv_Buffer)))
-        % TODO: Neben der Last Population noch eine letzte Population hinzufügen wo nur die Ergebnisse drin sind.
         
     end
     
