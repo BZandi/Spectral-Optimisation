@@ -314,13 +314,13 @@ if Logging == 1
             OptimSummaryTable.Metameric_Tuning_MelEDI(i) = max(ValidSolution_Table.MelanopicEDI_Actual)-min(ValidSolution_Table.MelanopicEDI_Actual);
             
             % Metameric difference using a colour fidelity condition of Rf >= 85
-            ValidSolution_Table_Rf85 = ValidSolution_Table(ValidSolution_Table.Rf_TM30 >= 85,:);          
+            ValidSolution_Table_Rf85 = ValidSolution_Table(ValidSolution_Table.Rf_TM30_Actual >= 85,:);          
             if size(ValidSolution_Table_Rf85, 1) >=2
                 OptimSummaryTable.Metameric_Tuning_MelEDI_Rf85(i) = max(ValidSolution_Table_Rf85.MelanopicEDI_Actual)-min(ValidSolution_Table_Rf85.MelanopicEDI_Actual);
             end
             
             % Metameric difference using a colour fidelity condition of Rf >= 90
-            ValidSolution_Table_Rf90 = ValidSolution_Table(ValidSolution_Table.Rf_TM30 >= 90,:);          
+            ValidSolution_Table_Rf90 = ValidSolution_Table(ValidSolution_Table.Rf_TM30_Actual >= 90,:);          
             if size(ValidSolution_Table_Rf90, 1) >=2
                 OptimSummaryTable.Metameric_Tuning_MelEDI_Rf90(i) = max(ValidSolution_Table_Rf90.MelanopicEDI_Actual)-min(ValidSolution_Table_Rf90.MelanopicEDI_Actual);
             end

@@ -63,8 +63,9 @@ for Index_Optim_target = 1:size(Benchmarking_Optimisation_Targets, 1)
         
         Logging_OptimSummary.IndexTarget(:) = Benchmarking_Optimisation_Targets.IndexNumber_Target(Index_Optim_target);
         Logging_OptimSummary.IndexTarget_Repetition(:) = Index_rep;
+        RngState = output.rngstate;
         
-        save(filename, 'Logging_PopulationArchiv','Logging_OptimSummary');
+        save(filename, 'Logging_PopulationArchiv','Logging_OptimSummary', 'RngState');
         
         fprintf('========== Index number [%d / %d] - Repetition [%d / %d] finished ============ \n',....
             Index_Optim_target, size(Benchmarking_Optimisation_Targets, 1),...
