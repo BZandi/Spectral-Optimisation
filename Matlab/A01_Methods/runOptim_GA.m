@@ -206,6 +206,8 @@ if Logging == 1
     OptimSummaryTable.numberSpectraThreshold(:) = numberSpectraThreshold_GA;
     OptimSummaryTable.NumSol(:) = NumSol_Buffer;
     OptimSummaryTable.Metameric_Tuning_MelEDI(:) = 0;
+    OptimSummaryTable.Metameric_Tuning_MelEDI_Rf85(:) = 0;
+    OptimSummaryTable.Metameric_Tuning_MelEDI_Rf90(:) = 0;
     
     IterTime_Buffer(1:3) = []; % First three time values are not valid for logging
     IterTime_Buffer = [IterTime_Buffer; TotalOptimTime_Seconds]; % Add last runtime cycle
@@ -306,8 +308,22 @@ if Logging == 1
         
         % If at least two solutions are in the iteration, then calc the metameric contrast of the melanopicEDI
         if size(find(CurrentTable.ValidSol),1) >= 2
+            
+            % Metameric difference without any colour fidelity condition
             ValidSolution_Table = CurrentTable(find(CurrentTable.ValidSol), :);
             OptimSummaryTable.Metameric_Tuning_MelEDI(i) = max(ValidSolution_Table.MelanopicEDI_Actual)-min(ValidSolution_Table.MelanopicEDI_Actual);
+            
+            % Metameric difference using a colour fidelity condition of Rf >= 85
+            ValidSolution_Table_Rf85 = ValidSolution_Table(ValidSolution_Table.Rf_TM30 >= 85,:);          
+            if size(ValidSolution_Table_Rf85, 1) >=2
+                OptimSummaryTable.Metameric_Tuning_MelEDI_Rf85(i) = max(ValidSolution_Table_Rf85.MelanopicEDI_Actual)-min(ValidSolution_Table_Rf85.MelanopicEDI_Actual);
+            end
+            
+            % Metameric difference using a colour fidelity condition of Rf >= 90
+            ValidSolution_Table_Rf90 = ValidSolution_Table(ValidSolution_Table.Rf_TM30 >= 90,:);          
+            if size(ValidSolution_Table_Rf90, 1) >=2
+                OptimSummaryTable.Metameric_Tuning_MelEDI_Rf90(i) = max(ValidSolution_Table_Rf90.MelanopicEDI_Actual)-min(ValidSolution_Table_Rf90.MelanopicEDI_Actual);
+            end
         end
         
         % Save caluclations of the current round
