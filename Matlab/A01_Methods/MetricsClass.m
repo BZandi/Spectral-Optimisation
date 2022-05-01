@@ -7,7 +7,7 @@ Additional information:
 
 The formula for the "Fotios brightness" and "Bermann brightness" is from the paper:
 
-Fotios SA, Levermore GJ. 
+Fotios SA, Levermore GJ.
 Chromatic effect on apparent brightness in interior spaces II: sws Lumens model.
 International Journal of Lighting Research and Technology.
 1998;30(3):103-106. doi:10.1177/096032719803000302
@@ -34,7 +34,7 @@ classdef MetricsClass<handle
             addpath('A01_Methods')
             
             load('A00_Data/Standard_Metriken.mat');
-            load('A00_Data/Standard_Observer.mat');   
+            load('A00_Data/Standard_Observer.mat');
             
             self.Metriken = Metriken;
             self.standardObserver_31 = standard_31;
@@ -46,18 +46,43 @@ classdef MetricsClass<handle
             
             melanopic_EDI = sum(self.Metriken.Melanopsin.* SPD)/(1.3262/1000);
             
-        end   
+        end
+        
+        % Computes the "melanopic stimulus" according to Gimenez et al. (2022)
+        % Link to the Paper: https://onlinelibrary.wiley.com/doi/full/10.1111/jpi.12786
+        % DeltaT_MIN: Light exposure in minutes
+        % PupilState: Natural pupil = 1, dilated pupil = 0
+        function [MelanopicStimulus] = ComputeMelanopicStimulus(self, SPD, DeltaT_MIN, PupilState)
+            
+            melanopic_EDI = self.get_MelanopicEDI(SPD);
+            
+            % Note:
+            % The values from the provided excel sheet were used, which were not rounded.
+            Constant_b = 9.00247695624451;
+            Constant_d = 7.49640085099029;
+            Constant_BetaE = -0.00760557655439016;
+            Constant_BetaP = -0.462139891125291;
+            
+            MS_Part_A = log10(melanopic_EDI.*10.^6);
+            
+            MS_Part_B = Constant_b + Constant_BetaE*DeltaT_MIN + Constant_BetaP*PupilState;
+            
+            MS_Part_C = (MS_Part_A./MS_Part_B).^Constant_d + 1;
+            
+            MelanopicStimulus = (0-100./MS_Part_C)+100;
+            
+        end
         
         % Input:
         %    Wavelength    Gesamtspektrum
         %    __________    ______________
-        %    
-        %       380          2.6781e-06  
-        %       381          2.1927e-06  
-        %       382          2.4942e-06  
+        %
+        %       380          2.6781e-06
+        %       381          2.1927e-06
+        %       382          2.4942e-06
         %
         function [returnMetrics] = getMetrics(self, Mischspektrum)
-                     
+            
             X_2 = sum(self.Metriken.Tristimulus_X_2_Grad.* Mischspektrum.Gesamtspektrum);
             Y_2 = sum(self.Metriken.Tristimulus_Y_2_Grad.* Mischspektrum.Gesamtspektrum);
             Z_2 = sum(self.Metriken.Tristimulus_Z_2_Grad.* Mischspektrum.Gesamtspektrum);
@@ -77,7 +102,7 @@ classdef MetricsClass<handle
             L10_Signal = sum(self.Metriken.L10.* Mischspektrum.Gesamtspektrum);
             M10_Signal = sum(self.Metriken.M10.* Mischspektrum.Gesamtspektrum);
             S10_Signal = sum(self.Metriken.S10.* Mischspektrum.Gesamtspektrum);
-      
+            
             Leuchtdichte = Y_2 *683;
             Rod_Signal = sum(self.Metriken.V_lambda_2_skotopic.* Mischspektrum.Gesamtspektrum);
             V_Signal = sum(Mischspektrum.Gesamtspektrum.* self.Metriken.V_lambda_2_Grad);
@@ -90,7 +115,7 @@ classdef MetricsClass<handle
             c = a_c * (f_x_y - 0.078); % Diese Konstante ist in der CIE noch mitenthalten
             L_strich = 1699 * Rod_Signal; % OK
             Helligkeit_Sagawa = L_strich^(1-a) * Leuchtdichte^(a) * 10^(c); % OK
-                              
+            
             returnMetrics = table(...
                 sum(Mischspektrum.Gesamtspektrum),... % Strahldichte
                 S10_Signal,... % S10_Signal
@@ -161,7 +186,7 @@ classdef MetricsClass<handle
             c = a_c .* (f_x_y - 0.078); % Diese Konstante ist in der CIE noch mitenthalten
             L_strich = 1699 .* Rod_Signal; % OK
             Helligkeit_Sagawa = L_strich.^(1-a) .* Leuchtdichte.^(a) .* 10.^(c); % OK
-
+            
             returnMetrics = table(...
                 sum(Mischspektrum{:,2:end})',...
                 S10_Signal,... % S10_Signal
@@ -197,7 +222,7 @@ classdef MetricsClass<handle
                 'CIEx_1931_2', 'CIEy_1931_2', 'CIEx_1931_10', 'CIEy_1931_10',...
                 'XTri_2', 'YTri_2', 'ZTri_2', 'XTri_10', 'YTri_10', 'ZTri_10'};
         end
-                
+        
     end
     
     
