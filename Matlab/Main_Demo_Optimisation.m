@@ -189,71 +189,142 @@ OptimisedMetrics = MetricsObject.getMetrics_Vec(OptimisedSpectra);
 fprintf('Melanopic-EDI change across the optimisation results: %d \n',...
     round(abs(max(OptimisedMetrics.MelanopicEDI) - min(OptimisedMetrics.MelanopicEDI)), 1));
 
-%% How to adjust a spectrum on our lab's 15-channel LED luminaire
-% CAUTION: This script can only be used if you connect your PC to the luminaire
-% Call this code snippets line by line!
+%% [UNDER DEVELOPMENT] - Optimising the maximum metameric melanopic EDI contrast
+% Here, two optimisation trials are conducted to maximise or minimise the melanopic EDI
+% for a given chromaticity and luminance. This process may take a while, but the metameric contrast
+% might be higher than the previous approach. 
 
-addpath('A01_Methods') % Basics
-A = seriallist; % Show available connections
+% Define optimisation conditions ============================
+% Target objectives [Luminance in cd/m2, CIEx-1931, CIEy-1931]
+qp = [220, 0.4483, 0.4480];
+% Tolerances for the objectives [Luminance in cd/m2, CIEx-1931, CIEy-1931]
+tolerance = [0.5, 0.0001, 0.0001];
+Lum = 11; % We use a 11-channel LED luminiare
+num_channels = 11; % We use a 11-channel LED luminiare
+population_size = 5000; % Size of the initial population
+max_iter = 150; % Count of iterations (Generations) of the optimisation
+max_time = 200400; % Maximum optimisation time in seconds
+last_pop = [];
+scores = [];
+ObjectiveClass = 'Luminance_CIExy_1931_2'; % Can also be 'Luminance_CIEuv_1976_2' or 'Receptorsignals'
 
-% 1) Create an object of the serial connection
-% The first argument is the COM-PORT (on windows something like 'COM4')
-% The second argiment is the baudrate of the microcontroler, which is 115200
-Serial_Object = Serial_Com('/dev/tty.SLAB_USBtoUART', 115200);
+% Stoping criterium can also be the number of found spectra
+% Break if you find this number of spectra
+NumberSpectra = 5000;
 
-% 2) Open the connection to the luminaire
-Serial_Object.open_Serial_Port();
+% Indicate if you wish to log the results: 1->true, 0->false
+% Caution: logging is very time consuming
+Logging = 0;
+% =============================================================
 
-% 3a) Adjust the current or the PWM values directly on the luminaire
-% PWM values need to be within 0 to 1.0 with three digits max
-% The current values are integer values ranging from 1 to 13
-[Ausgabe_Strom, Zeit_Strom] = Serial_Object.set_Current([1,13,1,1,1,1,1,1,1,6,1,1,1,1,1]);
-[Ausgabe_PWM, Zeit_PWM] = Serial_Object.set_PWM([0,0,0,0,0,0,0,0,0.842,0,0,0,0,0,0]);
-
-% 3b) You can also adjust a short flash
-% First argument is the channel number
-% The second argument is the exposure duration in ms
-% The third argument is the PWM value within [0 1.0]
-[Ausgabe_Flash, Zeit_Flash] = Serial_Object.set_flash(14,100,0.5);
-
-% 3c) With this method you can also check the luminaire (random protocoll)
-Serial_Object.check_Luminaire();
-
-% 4) Important: Do not forget to close the connection
-Serial_Object.close_Serial_Port();
-
-clear; clc;
-
-%% Example on how to adjust a spectrum on the 15-channel LED luminaire and measure it using a CS2000A spectrotadiometer
-
-addpath('A01_Methods') % Basics
-A = seriallist; % Show available connections
-
-% 1) Create an object of the MetricsClass to compute the lighting values
 MetricsObject = MetricsClass();
-
-% 2) Connect to the luminaire
-% The first argument is the COM-PORT (on windows something like 'COM4')
-% The second argiment is the baudrate of the microcontroler, which is 115200
-Serial_Object = Serial_Com('/dev/tty.SLAB_USBtoUART', 115200);
-Serial_Object.open_Serial_Port();
-
-% 3) Measure the spectrum with the CS2000A
-% The first argument is the used COM-PORT
-% The second argument is the count of repeated measurements
-Spektrum = measure_CS2000('/dev/tty.usbmodem12345678901', 10);
-
-% 4) Compute the lighting metrics
-MetricsObject.getMetrics_Vec(Spektrum)
-
-%%
+LumObject = Luminaire_CH11();
 
 
+% 1) Run first optimisation trial (find spectra for chromaticity and luminance) ========================
+% Note that you need to adjust the tolerances in the myOutputFunction() inside
+% the runOptim_GA() function. Currently the thresholds are set to "tolerance = [0.1, 0.0001, 0.0001]"
+[Logging_PopulationArchiv_1, Logging_OptimSummary_1, x_1, fval_1, exitflag_1, output_1, last_population_1, scores_1] = runOptim_GA(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
+    num_channels, population_size, max_iter, max_time, last_pop, scores, Logging);
+
+% The population needs to be filtered to show only the code value results that filled the threshold conditions
+RowNumber_1 = find((scores_1(:,1) < tolerance(1)) &...
+    (scores_1(:,2) < tolerance(2)) &...
+    (scores_1(:,3) < tolerance(3)));
+
+% Filter the results
+OptimisedSpectra = LumObject.get_CH11Spec_Vec(last_population_1(RowNumber_1, :));
+OptimisedMetrics = MetricsObject.getMetrics_Vec(OptimisedSpectra);
+
+Previous_Contrast_Value = round(abs(max(OptimisedMetrics.MelanopicEDI) - min(OptimisedMetrics.MelanopicEDI)), 1);
+
+fprintf('1. Optimisation: The metameric melanopic DER change is %.3f \n', Previous_Contrast_Value/qp(1))
+fprintf('1. Optimisation: Maximum melanopic DER is %.3f \n', max(OptimisedMetrics.MelanopicEDI)/qp(1))
+fprintf('1. Optimisation: Minimum melanopic DER is %.3f \n', min(OptimisedMetrics.MelanopicEDI)/qp(1))
+
+% =======================================================================================================
+
+
+% 2) Run the second optimisation trial (maximise melanopic EDI) =========================================
+OptimState = 'Maximise';
+[Logging_PopulationArchiv_2, Logging_OptimSummary_2, x_2, fval_2, exitflag_2, output_2, last_population_2, scores_2] = runOptim_GA_Max_Delta_mDER(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
+    num_channels, population_size, max_iter, max_time, last_population_1, [], Logging, OptimState);
+
+OptimisedSpectra_2 = LumObject.get_CH11Spec_Vec(last_population_2);
+OptimisedMetrics_2 = MetricsObject.getMetrics_Vec(OptimisedSpectra_2);
+
+tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
+CostValuesCIExy = sqrt((OptimisedMetrics_2.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_2.CIEy_1931_2 - qp(3)).^2);
+
+RowNumber_2 = find((OptimisedMetrics_2.Luminance-qp(1) < tolerance(1)) &...
+    (CostValuesCIExy < tolerance_Euclidian));
+
+OptimisedMetrics_2 = OptimisedMetrics_2(RowNumber_2,:);
+
+After_Max_Value = round(max(OptimisedMetrics_2.MelanopicEDI));
+
+fprintf('2. Optimisation: Number of solutions %d \n', size(OptimisedMetrics_2,1))
+fprintf('2. Optimisation: The maximum melanopic EDI is %.3f \n', After_Max_Value/qp(1))
+% =======================================================================================================
+
+
+% 3) Run the second optimisation trial (minmise melanopic EDI) =========================================
+OptimState = 'Minimise';
+[Logging_PopulationArchiv_3, Logging_OptimSummary_3, x_3, fval_3, exitflag_3, output_3, last_population_3, scores_3] = runOptim_GA_Max_Delta_mDER(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
+    num_channels, population_size, max_iter, max_time, last_population_1, [], Logging, OptimState);
+
+OptimisedSpectra_3 = LumObject.get_CH11Spec_Vec(last_population_3);
+OptimisedMetrics_3 = MetricsObject.getMetrics_Vec(OptimisedSpectra_3);
+
+tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
+CostValuesCIExy = sqrt((OptimisedMetrics_3.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_3.CIEy_1931_2 - qp(3)).^2);
+
+RowNumber_3 = find((OptimisedMetrics_3.Luminance-qp(1) < tolerance(1)) &...
+    (CostValuesCIExy < tolerance_Euclidian));
+
+OptimisedMetrics_3 = OptimisedMetrics_3(RowNumber_3,:);
+
+After_Min_Value = round(max(OptimisedMetrics_3.MelanopicEDI));
+
+fprintf('3. Optimisation: Number of solutions %d \n', size(OptimisedMetrics_3,1))
+fprintf('3. Optimisation: The minimum melanopic EDI is %.3f \n', After_Min_Value/qp(1))
+% =======================================================================================================
+
+% Print all results as a summary of the computation
+fprintf('========================== \n \n')
+
+fprintf('Summary\n \n')
+
+fprintf('========================== \n')
+fprintf('1. Optimisation: The metameric melanopic DER change is %.3f \n', Previous_Contrast_Value/qp(1))
+fprintf('1. Optimisation: Maximum melanopic DER is %.3f \n', max(OptimisedMetrics.MelanopicEDI)/qp(1))
+fprintf('1. Optimisation: Minimum melanopic DER is %.3f \n', min(OptimisedMetrics.MelanopicEDI)/qp(1))
+fprintf('========================== \n')
+
+fprintf('2. Optimisation: Number of solutions %d \n', size(OptimisedMetrics_2,1))
+fprintf('2. Optimisation: The maximum melanopic EDI is %.3f \n', After_Max_Value/qp(1))
+fprintf('========================== \n')
+
+fprintf('3. Optimisation: Number of solutions %d \n', size(OptimisedMetrics_3,1))
+fprintf('3. Optimisation: The minimum melanopic EDI is %.3f \n', After_Min_Value/qp(1))
+fprintf('========================== \n')
+
+fprintf('Summary Optimisation: Maximum Delta melanopic DER is %.3f \n', After_Max_Value/qp(1) - After_Min_Value/qp(1))
+fprintf('Summary Optimisation: Maximum Delta melanopic EDI is %.3f \n', After_Max_Value - After_Min_Value)
+
+fprintf('========================== \n')
+
+
+% 4) Get the two metameric spectral pairs that yield the maximum melanopic contrast =====================
+% Information: Only the last population is considered for this calculation
+% It might be possible that withtin the iterations a higher contrast could be achieved, which is not
+% considered here. For this, an extended analysis need to be conducted. 
 
 
 
+% =======================================================================================================
 
 
-
+%% Test section
 
 

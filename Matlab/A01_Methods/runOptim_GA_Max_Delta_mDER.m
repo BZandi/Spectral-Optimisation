@@ -15,85 +15,9 @@
 % 2) add also the possibility for optimising CIEu'v' code values
 % 3) Extent myOutputFunction()
 
-% Example how to call this method:
-% ========================================================
-% ========================================================
-% ========================================================
-
-% qp = [220, 0.4483, 0.4480];
-% % Tolerances for the objectives [Luminance in cd/m2, CIEx-1931, CIEy-1931]
-% tolerance = [0.5, 0.0001, 0.0001];
-% Lum = 11; % We use a 11-channel LED luminiare
-% num_channels = 11; % We use a 11-channel LED luminiare
-% population_size = 3000; % Size of the initial population
-% max_iter = 100; % Count of iterations (Generations) of the optimisation
-% max_time = 200400; % Maximum optimisation time in seconds
-% last_pop = [];
-% scores = [];
-% ObjectiveClass = 'Luminance_CIExy_1931_2'; % Can also be 'Luminance_CIEuv_1976_2' or 'Receptorsignals'
-% 
-% % Stoping criterium can also be the number of found spectra
-% % Break if you find this number of spectra
-% NumberSpectra = 5000;
-% 
-% % Indicate if you wish to log the results: 1->true, 0->false
-% % Caution: logging is very time consuming
-% Logging = 0;
-% 
-% % Run the optimisation
-% % Note that you need to adjust the tolerances in the myOutputFunction() inside
-% % the runOptim_GA() function. Currently the thresholds are set to "tolerance = [0.5, 0.0001, 0.0001]"
-% [Logging_PopulationArchiv, Logging_OptimSummary, x, fval, exitflag, output, last_population, scores] = runOptim_GA(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
-%     num_channels, population_size, max_iter, max_time, last_pop, scores, Logging);
-% 
-% MetricsObject = MetricsClass();
-% LumObject = Luminaire_CH11();
-% 
-% RowNumber = find((scores(:,1) < tolerance(1)) &...
-%     (scores(:,2) < tolerance(2)) &...
-%     (scores(:,3) < tolerance(3)));
-% 
-% % Filter the results
-% OptimisedSpectra = LumObject.get_CH11Spec_Vec(last_population(RowNumber, :));
-% OptimisedMetrics = MetricsObject.getMetrics_Vec(OptimisedSpectra);
-% 
-% fprintf('VORHER -- Melanopic-EDI change across the optimisation results: %d \n',...
-%     round(abs(max(OptimisedMetrics.MelanopicEDI) - min(OptimisedMetrics.MelanopicEDI)), 1));
-% 
-% Vorher = round(abs(max(OptimisedMetrics.MelanopicEDI) - min(OptimisedMetrics.MelanopicEDI)), 1);
-% 
-% [Logging_PopulationArchiv, Logging_OptimSummary, x, fval, exitflag, output, last_population, scores] = runOptim_GA_Max_Delta_mDER(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
-%     num_channels, population_size, max_iter, max_time, last_population, [], Logging);
-% 
-% % The population needs to be filtered to show only the code value results that filled the threshold conditions
-% MetricsObject = MetricsClass();
-% LumObject = Luminaire_CH11();
-% 
-% % Filter the results
-% OptimisedSpectra = LumObject.get_CH11Spec_Vec(last_population);
-% 
-% OptimisedMetrics = MetricsObject.getMetrics_Vec(OptimisedSpectra);
-% 
-% RowNumber = find((OptimisedMetrics.Luminance-qp(1) < tolerance(1)) &...
-%     (OptimisedMetrics.CIEx_1931_2-qp(2) < tolerance(2)) &...
-%     (OptimisedMetrics.CIEy_1931_2-qp(3) < tolerance(3)));
-% 
-% OptimisedMetrics = OptimisedMetrics(RowNumber,:);
-% 
-% fprintf('NACHHER -- Melanopic-EDI change across the optimisation results: %d \n',...
-%     round(abs(max(OptimisedMetrics.MelanopicEDI) - min(OptimisedMetrics.MelanopicEDI)), 1));
-% 
-% Nacher = round(abs(max(OptimisedMetrics.MelanopicEDI) - min(OptimisedMetrics.MelanopicEDI)), 1);
-% 
-% fprintf('Vorher %d ---- Nachher %d \n', Vorher/qp(1), Nacher/qp(1))
-
-% ========================================================
-% ========================================================
-% ========================================================
-
 function [Logging_PopulationArchiv, Logging_OptimSummary, x, fval, exitflag, output, last_population, scores] = ....
     runOptim_GA_Max_Delta_mDER(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
-    num_channels, population_size, max_iter, max_time, last_pop, scores, Logging)
+    num_channels, population_size, max_iter, max_time, last_pop, scores, Logging, OptimState)
 
 Logging_PopulationArchiv = [];
 Logging_OptimSummary = [];
@@ -109,6 +33,9 @@ logging_global = Logging;
 
 global numberSpectraThreshold_GA
 numberSpectraThreshold_GA = NumberSpectra;
+
+global OptimState_global;
+OptimState_global = OptimState;
 % =============================================
 
 % Protocoll Values ============================
@@ -120,7 +47,6 @@ if strcmp(ObjectiveClass, 'Luminance_CIExy_1931_2')
     CIEx_1931_2_Tolerance_Buffer = tolerance(2);
     CIEy_1931_2_Tolerance_Buffer = tolerance(3);
     Luminance_Tolerance_Buffer = tolerance(1);
-
 end
 
 global NumIteration;
@@ -236,29 +162,53 @@ problem.options = optimoptions(problem.options, 'MaxTime', max_time);
             MelanopicDER = Metrics.MelanopicEDI./Metrics.Luminance;
             tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
 
-            F(:, 1) = 3 - MelanopicDER; % Maximising melanopic DER
-            % F(:, 1) = -3 + MelanopicDER; % Minismising melanopic DER
-            F(:, 2) = abs(tolerance_Euclidian- sqrt((Metrics.CIEx_1931_2 - qp(2)).^2 + (Metrics.CIEy_1931_2 - qp(3)).^2));
+            if OptimState_global == 'Maximise'
+                F(:, 1) = abs(3 - MelanopicDER); % Maximising melanopic DER
+            elseif OptimState_global == 'Minimise'
+                F(:, 1) = -3 + MelanopicDER; % Minismising melanopic DER
+            end
+            %F(:, 2) = abs(tolerance_Euclidian- sqrt((Metrics.CIEx_1931_2 - qp(2)).^2 + (Metrics.CIEy_1931_2 - qp(3)).^2));
 
             % Debugging Code ---------------
+            % ------------------------------
             fprintf('Count of population: %d \n', size(X,1))
             ZeileMax = Metrics(find(Metrics.MelanopicEDI == max(Metrics.MelanopicEDI)),:);
             % Berechne die Anzahl der Spektren, welche eine Leuchtdichte < 0.1 haben
             FoundOptimisationResult = find((abs(Metrics.Luminance-qp(1)) < tolerance(1)));
+
             fprintf('Count of spectra with a luminance below the threshold: %d \n', size(FoundOptimisationResult,1));
             % Berechne die Anzahl der Spektren, welche eine Farbortdifferent < 0.0014 aufweisen
             tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
             CostValuesCIExy = sqrt((Metrics.CIEx_1931_2- qp(2)).^2 + (Metrics.CIEy_1931_2 - qp(3)).^2);
-            FoundOptimisationResult = find((abs(CostValuesCIExy) < tolerance_Euclidian));
+            FoundOptimisationResult = find(CostValuesCIExy < tolerance_Euclidian);
+
             fprintf('Count of spectra with a Delta xy below the threshold: %d \n', size(FoundOptimisationResult,1));
-            fprintf('Mean of CIExy cost value:  %.5f \n', mean(CostValuesCIExy));
-            fprintf ('Maximum MDER Difference:  %.4f \n', max(MelanopicDER)-min(MelanopicDER))
+            fprintf('Global Maximum MDER:  %.4f \n', max(MelanopicDER));
+            fprintf('Global Mnimum MDER:  %.4f \n', min(MelanopicDER));
+
+            RowNumber_2 = find((Metrics.Luminance-qp(1) < tolerance(1)) &...
+                (CostValuesCIExy < tolerance_Euclidian));
+            OptimisedMetrics_2 = Metrics(RowNumber_2,:);
+            After_Max_Value = round(max(OptimisedMetrics_2.MelanopicEDI))/qp(1);
+
+            fprintf('Actual Maximum MDER:  %.4f \n', max(OptimisedMetrics_2.MelanopicEDI)/qp(1));
+            fprintf('Actual Mnimum MDER:  %.4f \n', min(OptimisedMetrics_2.MelanopicEDI)/qp(1));
 
             IterTime_Buffer = IterTime_Buffer + 1;
-            if isempty(MelanopicDER)
-                MelanopicDERMax = maxmDER_Buffer(end-1);
-            else
-                MelanopicDERMax= max(MelanopicDER);
+            if OptimState_global == 'Maximise'
+
+                if isempty(After_Max_Value) %isempty(MelanopicDER)
+                    MelanopicDERMax = maxmDER_Buffer(end);
+                else
+                    MelanopicDERMax= max(OptimisedMetrics_2.MelanopicEDI)/qp(1);
+                end
+
+            elseif OptimState_global == 'Minimise'
+                if isempty(After_Max_Value) %isempty(MelanopicDER)
+                    MelanopicDERMax = maxmDER_Buffer(end);
+                else
+                    MelanopicDERMax= min(OptimisedMetrics_2.MelanopicEDI)/qp(1);
+                end
             end
             maxmDER_Buffer = [maxmDER_Buffer, MelanopicDERMax];
 
@@ -266,6 +216,7 @@ problem.options = optimoptions(problem.options, 'MaxTime', max_time);
             plot(1:IterTime_Buffer, maxmDER_Buffer, '--b'); hold off;
             xlabel('Iterations'); ylabel('mDER');
             drawnow
+            % ------------------------------
             % ------------------------------
         end
 
@@ -281,7 +232,9 @@ problem.options = optimoptions(problem.options, 'MaxTime', max_time);
         Metrics = MetricsObject.getMetrics_Vec(CurrentSpectra);
 
         tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
-        c = [abs(Metrics.Luminance - qp(1))-tolerance(1)];
+        %c = [abs(Metrics.Luminance - qp(1))-tolerance(1)];
+        c = [abs(Metrics.Luminance - qp(1))-tolerance(1),...
+            sqrt((Metrics.CIEx_1931_2 - qp(2)).^2 + (Metrics.CIEy_1931_2 - qp(3)).^2)-tolerance_Euclidian];
 
         ceq = [];
 
