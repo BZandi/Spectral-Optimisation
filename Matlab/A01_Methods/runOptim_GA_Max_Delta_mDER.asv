@@ -183,70 +183,72 @@ problem.options = optimoptions(problem.options, 'MaxTime', max_time);
             CurrentSpectra = LumObject.get_CH11Spec_Vec(X);
         end
 
-        Metrics = MetricsObject.getMetrics_Vec(CurrentSpectra);
-        MelanopicDER = Metrics.MelanopicEDI./Metrics.Luminance;
-        tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
-
         if strcmp(ObjectiveClass, 'Luminance_CIExy_1931_2')
-            CostValuesCIE = sqrt((Metrics.CIEx_1931_2- qp(2)).^2 + (Metrics.CIEy_1931_2 - qp(3)).^2);
+
+            Metrics = MetricsObject.getMetrics_Vec(CurrentSpectra);
+            MelanopicDER = Metrics.MelanopicEDI./Metrics.Luminance;
+            tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
+
             if strcmp(OptimState_global, 'Maximise')
                 F(:, 1) = 5 - MelanopicDER; % Maximising melanopic DER
             elseif strcmp(OptimState_global, 'Minimise')
                 F(:, 1) = -5 + MelanopicDER; % Minismising melanopic DER
             end
         elseif strcmp(ObjectiveClass, 'Luminance_CIEuv_1976_2')
-            CostValuesCIE = sqrt((Metrics.CIEu_1976_2- qp(2)).^2 + (Metrics.CIEv_1976_2 - qp(3)).^2);
             if strcmp(OptimState_global, 'Maximise')
                 F(:, 1) = 5 - MelanopicDER; % Maximising melanopic DER
             elseif strcmp(OptimState_global, 'Minimise')
                 F(:, 1) = -5 + MelanopicDER; % Minismising melanopic DER
             end
+
         elseif strcmp(ObjectiveClass, 'Receptorsignals')
-            % Not implemented yet
-        end
-
-        % Debugging Code % ======================================================================================
-        % =======================================================================================================
-        % =======================================================================================================
-        fprintf('Global Maximum MDER:  %.4f \n', max(MelanopicDER));
-        fprintf('Global Mnimum MDER:  %.4f \n', min(MelanopicDER));
-
-        fprintf('Count of population: %d \n', size(X,1))
-        % Berechne die Anzahl der Spektren, welche eine Farbortdifferent < 0.0014 aufweisen
-        FoundOptimisationResult = find(CostValuesCIE < tolerance_Euclidian);
-        fprintf('Count of spectra with a Delta xy below the threshold: %d \n', size(FoundOptimisationResult,1));
-
-        % Berechne wie hoch mDER ist für die Randbedingungen
-        RowNumber_2 = find((abs(Metrics.Luminance-qp(1)) < tolerance(1)) &...
-            (CostValuesCIE < tolerance_Euclidian));
-        OptimisedMetrics_2 = Metrics(RowNumber_2,:);
-        After_Max_Value = round(max(OptimisedMetrics_2.MelanopicEDI))/qp(1);
-        fprintf('Actual Maximum MDER:  %.4f \n', max(OptimisedMetrics_2.MelanopicEDI)/qp(1));
-        fprintf('Actual Mnimum MDER:  %.4f \n', min(OptimisedMetrics_2.MelanopicEDI)/qp(1));
-
-        IterTime_Buffer = IterTime_Buffer + 1;
-        if strcmp(OptimState_global, 'Maximise')
-            if isempty(After_Max_Value) %isempty(MelanopicDER)
-                MelanopicDERMax = maxmDER_Buffer(end);
-            else
-                MelanopicDERMax= max(OptimisedMetrics_2.MelanopicEDI)/qp(1);
-            end
-        elseif strcmp(OptimState_global, 'Minimise')
-            if isempty(After_Max_Value) %isempty(MelanopicDER)
-                MelanopicDERMax = maxmDER_Buffer(end);
-            else
-                MelanopicDERMax= min(OptimisedMetrics_2.MelanopicEDI)/qp(1);
+            if strcmp(OptimState_global, 'Maximise')
+                F(:, 1) = 5 - MelanopicDER; % Maximising melanopic DER
+            elseif strcmp(OptimState_global, 'Minimise')
+                F(:, 1) = -5 + MelanopicDER; % Minismising melanopic DER
             end
         end
-        maxmDER_Buffer = [maxmDER_Buffer, MelanopicDERMax];
-
-        scatter(1:IterTime_Buffer, maxmDER_Buffer,80, 'filled', 'b');hold on;
-        plot(1:IterTime_Buffer, maxmDER_Buffer, '--b'); hold off;
-        xlabel('Iterations'); ylabel('mDER');
-        drawnow
-        % =======================================================================================================
-        % =======================================================================================================
-        % =======================================================================================================
+        %             % Debugging Code ---------------
+        %             % ------------------------------
+        %             fprintf('Global Maximum MDER:  %.4f \n', max(MelanopicDER));
+        %             fprintf('Global Mnimum MDER:  %.4f \n', min(MelanopicDER));
+        %
+        %             fprintf('Count of population: %d \n', size(X,1))
+        %             % Berechne die Anzahl der Spektren, welche eine Farbortdifferent < 0.0014 aufweisen
+        %             CostValuesCIExy = sqrt((Metrics.CIEx_1931_2- qp(2)).^2 + (Metrics.CIEy_1931_2 - qp(3)).^2);
+        %             FoundOptimisationResult = find(CostValuesCIExy < tolerance_Euclidian);
+        %             fprintf('Count of spectra with a Delta xy below the threshold: %d \n', size(FoundOptimisationResult,1));
+        %
+        %             % Berechne wie hoch mDER ist für die Randbedingungen
+        %             RowNumber_2 = find((abs(Metrics.Luminance-qp(1)) < tolerance(1)) &...
+        %                 (CostValuesCIExy < tolerance_Euclidian));
+        %             OptimisedMetrics_2 = Metrics(RowNumber_2,:);
+        %             After_Max_Value = round(max(OptimisedMetrics_2.MelanopicEDI))/qp(1);
+        %             fprintf('Actual Maximum MDER:  %.4f \n', max(OptimisedMetrics_2.MelanopicEDI)/qp(1));
+        %             fprintf('Actual Mnimum MDER:  %.4f \n', min(OptimisedMetrics_2.MelanopicEDI)/qp(1));
+        %
+        %             IterTime_Buffer = IterTime_Buffer + 1;
+        %             if strcmp(OptimState_global, 'Maximise')
+        %                 if isempty(After_Max_Value) %isempty(MelanopicDER)
+        %                     MelanopicDERMax = maxmDER_Buffer(end);
+        %                 else
+        %                     MelanopicDERMax= max(OptimisedMetrics_2.MelanopicEDI)/qp(1);
+        %                 end
+        %             elseif strcmp(OptimState_global, 'Minimise')
+        %                 if isempty(After_Max_Value) %isempty(MelanopicDER)
+        %                     MelanopicDERMax = maxmDER_Buffer(end);
+        %                 else
+        %                     MelanopicDERMax= min(OptimisedMetrics_2.MelanopicEDI)/qp(1);
+        %                 end
+        %             end
+        %             maxmDER_Buffer = [maxmDER_Buffer, MelanopicDERMax];
+        %
+        %             scatter(1:IterTime_Buffer, maxmDER_Buffer,80, 'filled', 'b');hold on;
+        %             plot(1:IterTime_Buffer, maxmDER_Buffer, '--b'); hold off;
+        %             xlabel('Iterations'); ylabel('mDER');
+        %             drawnow
+        %             % ------------------------------
+        %             % ------------------------------
     end
 
     function [c, ceq] = nonlcon(X)
@@ -264,15 +266,11 @@ problem.options = optimoptions(problem.options, 'MaxTime', max_time);
             tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
             c = [abs(Metrics.Luminance - qp(1))-tolerance(1),...
                 sqrt((Metrics.CIEx_1931_2 - qp(2)).^2 + (Metrics.CIEy_1931_2 - qp(3)).^2)-tolerance_Euclidian];
-
         elseif strcmp(ObjectiveClass, 'Luminance_CIEuv_1976_2')
 
-            tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
-            c = [abs(Metrics.Luminance - qp(1))-tolerance(1),...
-                sqrt((Metrics.CIEu_1976_2 - qp(2)).^2 + (Metrics.CIEv_1976_2 - qp(3)).^2)-tolerance_Euclidian];
-
         elseif strcmp(ObjectiveClass, 'Receptorsignals')
-            % Not implemented yet
+            % Not 
+
         end
 
         ceq = [];
@@ -297,10 +295,7 @@ problem.options = optimoptions(problem.options, 'MaxTime', max_time);
                     %FoundOptimisationResult = find((state.Score(:,2) < tolerance_Euclidian));
 
                     FoundOptimisationResult = 0;
-                elseif strcmp(ObjectiveClass, 'Luminance_CIEuv_1976_2')
-                    FoundOptimisationResult = 0;
-                elseif strcmp(ObjectiveClass, 'Receptorsignals')
-                    FoundOptimisationResult = 0;
+
                 end
 
                 % Stop the optimisation process before when more than 2 results were found

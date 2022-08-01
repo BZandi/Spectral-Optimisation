@@ -27,9 +27,9 @@ set(groot, 'DefaultFigurePaperPosition', [0.1, 11, 8.5, 4.5]);
 %% Example of how to generate arbitrary spectra using the different available luminaires
 close all;
 % Luminaire 1: 15-channel LED luminaire =========================
-% See the following paper for more information about the luminaire:
-% Zandi, B., Klabes, J. & Khanh, T.Q.
-% Prediction accuracy of L- and M-cone based human pupil light models.
+% See the following paper for more information about the luminaire: 
+% Zandi, B., Klabes, J. & Khanh, T.Q. 
+% Prediction accuracy of L- and M-cone based human pupil light models. 
 % Sci Rep 10, 10988 (2020). https://doi.org/10.1038/s41598-020-67593-3
 
 % Step one: Create an object of the luminaire class
@@ -62,7 +62,7 @@ legend({'Spectrum 1', 'Spectrum 2'})
 % ===============================================================
 
 % Luminaire 2: 11-channel LED luminaire =========================
-% See the following paper for more information about the luminaire:
+% See the following paper for more information about the luminaire: 
 % Zandi, B., Stefani, O., Herzog, A. et al.
 % Optimising metameric spectra for integrative lighting to modulate the circadian system without affecting visual appearance.
 % Sci Rep 11, 23188 (2021). https://doi.org/10.1038/s41598-021-02136-y
@@ -192,17 +192,17 @@ fprintf('Melanopic-EDI change across the optimisation results: %d \n',...
 %% [UNDER DEVELOPMENT] - Optimising the maximum metameric melanopic EDI contrast
 % Here, two optimisation trials are conducted to maximise or minimise the melanopic EDI
 % for a given chromaticity and luminance. This process may take a while, but the metameric contrast
-% might be higher than the previous approach.
+% might be higher than the previous approach. 
 
 % Define optimisation conditions ============================
-% Target objectives [Luminance in cd/m2, CIEu'-1976_2, CIEv'-1976_2]
+% Target objectives [Luminance in cd/m2, CIEx-1931, CIEy-1931]
 qp = [220, 0.239748, 0.539096];
-% Tolerances for the objectives [Luminance in cd/m2, CIEu'-1976_2, CIEv'-1976_2]
+% Tolerances for the objectives [Luminance in cd/m2, CIEx-1931, CIEy-1931]
 tolerance = [0.5, 0.001, 0.001];
 Lum = 11; % We use a 11-channel LED luminiare
 num_channels = 11; % We use a 11-channel LED luminiare
-population_size = 3000; % Size of the initial population
-max_iter = 100; % Count of iterations (Generations) of the optimisation
+population_size = 5000; % Size of the initial population
+max_iter = 150; % Count of iterations (Generations) of the optimisation
 max_time = 200400; % Maximum optimisation time in seconds
 last_pop = [];
 scores = [];
@@ -240,8 +240,6 @@ Previous_Contrast_Value = round(abs(max(OptimisedMetrics.MelanopicEDI) - min(Opt
 fprintf('1. Optimisation: The metameric melanopic DER change is %.3f \n', Previous_Contrast_Value/qp(1))
 fprintf('1. Optimisation: Maximum melanopic DER is %.3f \n', max(OptimisedMetrics.MelanopicEDI)/qp(1))
 fprintf('1. Optimisation: Minimum melanopic DER is %.3f \n', min(OptimisedMetrics.MelanopicEDI)/qp(1))
-fprintf('1. Optimisation: Number of optimised spectra %d \n', size(RowNumber_1,1))
-
 % =======================================================================================================
 
 
@@ -255,14 +253,10 @@ OptimisedSpectra_2 = LumObject.get_CH11Spec_Vec(last_population_2);
 OptimisedMetrics_2 = MetricsObject.getMetrics_Vec(OptimisedSpectra_2);
 
 tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
-if strcmp(ObjectiveClass, 'Luminance_CIExy_1931_2')
-    CostValuesCIE = sqrt((OptimisedMetrics_2.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_2.CIEy_1931_2 - qp(3)).^2);
-elseif strcmp(ObjectiveClass, 'Luminance_CIEuv_1976_2')
-    CostValuesCIE = sqrt((OptimisedMetrics_2.CIEu_1976_2- qp(2)).^2 + (OptimisedMetrics_2.CIEv_1976_2 - qp(3)).^2);
-end
+CostValuesCIExy = sqrt((OptimisedMetrics_2.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_2.CIEy_1931_2 - qp(3)).^2);
 
 RowNumber_2 = find((abs(OptimisedMetrics_2.Luminance-qp(1)) < tolerance(1)) &...
-    (CostValuesCIE < tolerance_Euclidian));
+    (CostValuesCIExy < tolerance_Euclidian));
 
 OptimisedMetrics_2 = OptimisedMetrics_2(RowNumber_2,:);
 
@@ -283,14 +277,10 @@ OptimisedSpectra_3 = LumObject.get_CH11Spec_Vec(last_population_3);
 OptimisedMetrics_3 = MetricsObject.getMetrics_Vec(OptimisedSpectra_3);
 
 tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
-if strcmp(ObjectiveClass, 'Luminance_CIExy_1931_2')
-    CostValuesCIE = sqrt((OptimisedMetrics_2.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_2.CIEy_1931_2 - qp(3)).^2);
-elseif strcmp(ObjectiveClass, 'Luminance_CIEuv_1976_2')
-    CostValuesCIE = sqrt((OptimisedMetrics_2.CIEu_1976_2- qp(2)).^2 + (OptimisedMetrics_2.CIEv_1976_2 - qp(3)).^2);
-end
+CostValuesCIExy = sqrt((OptimisedMetrics_3.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_3.CIEy_1931_2 - qp(3)).^2);
 
 RowNumber_3 = find((abs(OptimisedMetrics_3.Luminance-qp(1)) < tolerance(1)) &...
-    (CostValuesCIE < tolerance_Euclidian));
+    (CostValuesCIExy < tolerance_Euclidian));
 
 OptimisedMetrics_3 = OptimisedMetrics_3(RowNumber_3,:);
 
@@ -324,7 +314,7 @@ fprintf('========================== \n')
 % 4) Get the two metameric spectral pairs that yield the maximum melanopic contrast =====================
 % Information: Only the last population is considered for this calculation
 % It might be possible that withtin the iterations a higher contrast could be achieved, which is not
-% considered here. For this, an extended analysis need to be conducted.
+% considered here. For this, an extended analysis need to be conducted. 
 
 
 
