@@ -194,6 +194,7 @@ fprintf('Melanopic-EDI change across the optimisation results: %d \n',...
 % for a given chromaticity and luminance. This process may take a while, but the metameric contrast
 % might be higher than the previous approach.
 
+% =============================================================
 % Define optimisation conditions ============================
 % Target objectives [Luminance in cd/m2, CIEu'-1976_2, CIEv'-1976_2]
 qp = [220, 0.239748, 0.539096];
@@ -202,7 +203,7 @@ tolerance = [0.5, 0.001, 0.001];
 Lum = 11; % We use a 11-channel LED luminiare
 num_channels = 11; % We use a 11-channel LED luminiare
 population_size = 3000; % Size of the initial population
-max_iter = 100; % Count of iterations (Generations) of the optimisation
+max_iter = 150; % Count of iterations (Generations) of the optimisation
 max_time = 200400; % Maximum optimisation time in seconds
 last_pop = [];
 scores = [];
@@ -215,7 +216,25 @@ NumberSpectra = 5000;
 % Indicate if you wish to log the results: 1->true, 0->false
 % Caution: logging is very time consuming
 Logging = 0;
+
+% NEW Values (Do not forget) ==================================
+
+% ---- IMPORTANT 1 : ----- If Rf = [], than Rf_Actual should also be Rf_Actual = []
+
+% ---- IMPORTANT 2 : ----- Before using a Rf value read the file MetricsClass_LuxPy.m
+
+% This value is used for maximsation in the optimisation
+Rf = []; % Options: 1) 100 or 2) []
+
+% With this value only spectra are considered with x > Rf_Actual
+Rf_Actual = []; % 1) Value (Example: 80) or 2) []
+
+% Number of Iterations for minimsation or maximisation run
+max_iter_OPTIM_MAX_MIN = 150;
+
 % =============================================================
+% =============================================================
+
 
 MetricsObject = MetricsClass();
 LumObject = Luminaire_CH11();
@@ -246,10 +265,9 @@ fprintf('1. Optimisation: Number of optimised spectra %d \n', size(RowNumber_1,1
 
 
 % 2) Run the second optimisation trial (maximise melanopic EDI) =========================================
-OptimState = 'Maximise';
-max_iter = 150;
+OptimState = 'Maximise'; % or 'Minimise'
 [Logging_PopulationArchiv_2, Logging_OptimSummary_2, x_2, fval_2, exitflag_2, output_2, last_population_2, scores_2] = runOptim_GA_Max_Delta_mDER(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
-    num_channels, population_size, max_iter, max_time, last_population_1, [], Logging, OptimState);
+    num_channels, population_size, max_iter_OPTIM_MAX_MIN, max_time, last_population_1, [], Logging, OptimState, Rf);
 
 OptimisedSpectra_2 = LumObject.get_CH11Spec_Vec(last_population_2);
 OptimisedMetrics_2 = MetricsObject.getMetrics_Vec(OptimisedSpectra_2);
@@ -261,47 +279,73 @@ elseif strcmp(ObjectiveClass, 'Luminance_CIEuv_1976_2')
     CostValuesCIE = sqrt((OptimisedMetrics_2.CIEu_1976_2- qp(2)).^2 + (OptimisedMetrics_2.CIEv_1976_2 - qp(3)).^2);
 end
 
-RowNumber_2 = find((abs(OptimisedMetrics_2.Luminance-qp(1)) < tolerance(1)) &...
-    (CostValuesCIE < tolerance_Euclidian));
+if ~isempty(Rf)
+    MetricsObject_LuxPy = MetricsClass_LuxPy();
+    MetricsLuxpy = MetricsObject_LuxPy.getMetrics_Vec(OptimisedSpectra_2);
+    OptimisedMetrics_2.Rf_TM30 = MetricsLuxpy.Rf_TM30;
+
+    RowNumber_2 = find((abs(OptimisedMetrics_2.Luminance-qp(1)) < tolerance(1)) &...
+        (CostValuesCIE < tolerance_Euclidian) & ...
+        (OptimisedMetrics_2.Rf_TM30 > Rf_Actual));
+else
+    RowNumber_2 = find((abs(OptimisedMetrics_2.Luminance-qp(1)) < tolerance(1)) &...
+        (CostValuesCIE < tolerance_Euclidian));
+end
 
 OptimisedMetrics_2 = OptimisedMetrics_2(RowNumber_2,:);
 
 After_Max_Value = round(max(OptimisedMetrics_2.MelanopicEDI));
 
+fprintf('-- WARNING -- Rf condition is set to %d \n', Rf_Actual)
+
 fprintf('2. Optimisation: Number of solutions %d \n', size(OptimisedMetrics_2,1))
-fprintf('2. Optimisation: The maximum melanopic EDI is %.3f \n', After_Max_Value/qp(1))
+fprintf('2. Optimisation: The maximum melanopic DER is %.3f \n', After_Max_Value/qp(1))
 % =======================================================================================================
 
 
 % 3) Run the second optimisation trial (minmise melanopic EDI) =========================================
-OptimState = 'Minimise';
-max_iter = 150;
+OptimState = 'Minimise'; % 'Maximise'
 [Logging_PopulationArchiv_3, Logging_OptimSummary_3, x_3, fval_3, exitflag_3, output_3, last_population_3, scores_3] = runOptim_GA_Max_Delta_mDER(Lum, ObjectiveClass, qp, tolerance, NumberSpectra,...
-    num_channels, population_size, max_iter, max_time, last_population_1, [], Logging, OptimState);
+    num_channels, population_size, max_iter_OPTIM_MAX_MIN, max_time, last_population_1, [], Logging, OptimState, Rf);
 
 OptimisedSpectra_3 = LumObject.get_CH11Spec_Vec(last_population_3);
 OptimisedMetrics_3 = MetricsObject.getMetrics_Vec(OptimisedSpectra_3);
 
 tolerance_Euclidian = sqrt((tolerance(2))^2 + (tolerance(3))^2);
 if strcmp(ObjectiveClass, 'Luminance_CIExy_1931_2')
-    CostValuesCIE = sqrt((OptimisedMetrics_2.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_2.CIEy_1931_2 - qp(3)).^2);
+    CostValuesCIE = sqrt((OptimisedMetrics_3.CIEx_1931_2- qp(2)).^2 + (OptimisedMetrics_3.CIEy_1931_2 - qp(3)).^2);
 elseif strcmp(ObjectiveClass, 'Luminance_CIEuv_1976_2')
-    CostValuesCIE = sqrt((OptimisedMetrics_2.CIEu_1976_2- qp(2)).^2 + (OptimisedMetrics_2.CIEv_1976_2 - qp(3)).^2);
+    CostValuesCIE = sqrt((OptimisedMetrics_3.CIEu_1976_2- qp(2)).^2 + (OptimisedMetrics_3.CIEv_1976_2 - qp(3)).^2);
 end
 
-RowNumber_3 = find((abs(OptimisedMetrics_3.Luminance-qp(1)) < tolerance(1)) &...
-    (CostValuesCIE < tolerance_Euclidian));
+if ~isempty(Rf)
+    MetricsObject_LuxPy = MetricsClass_LuxPy();
+    MetricsLuxpy = MetricsObject_LuxPy.getMetrics_Vec(OptimisedSpectra_3);
+    OptimisedMetrics_3.Rf_TM30 = MetricsLuxpy.Rf_TM30;
+
+    RowNumber_3 = find((abs(OptimisedMetrics_3.Luminance-qp(1)) < tolerance(1)) &...
+        (CostValuesCIE < tolerance_Euclidian) & ...
+        (OptimisedMetrics_3.Rf_TM30 > Rf_Actual));
+else
+    RowNumber_3 = find((abs(OptimisedMetrics_3.Luminance-qp(1)) < tolerance(1)) &...
+        (CostValuesCIE < tolerance_Euclidian));
+end
 
 OptimisedMetrics_3 = OptimisedMetrics_3(RowNumber_3,:);
 
-After_Min_Value = round(max(OptimisedMetrics_3.MelanopicEDI));
+After_Min_Value = round(min(OptimisedMetrics_3.MelanopicEDI));
 
+fprintf('-- WARNING -- Rf condition is set to %d \n', Rf_Actual)
 fprintf('3. Optimisation: Number of solutions %d \n', size(OptimisedMetrics_3,1))
-fprintf('3. Optimisation: The minimum melanopic EDI is %.3f \n', After_Min_Value/qp(1))
+fprintf('3. Optimisation: The minimum melanopic DER is %.3f \n', After_Min_Value/qp(1))
 % =======================================================================================================
 
 
 % Print all results as a summary of the computation ====================================================
+fprintf('========================== \n \n')
+
+fprintf('-- WARNING -- Rf condition is set to %d \n\n', Rf_Actual)
+
 fprintf('========================== \n \n')
 fprintf('Summary\n \n')
 fprintf('========================== \n')
@@ -325,9 +369,47 @@ fprintf('========================== \n')
 % Information: Only the last population is considered for this calculation
 % It might be possible that withtin the iterations a higher contrast could be achieved, which is not
 % considered here. For this, an extended analysis need to be conducted.
+CodeValues_Min_Optimisation_Filtered = last_population_3(RowNumber_3,:);
+Spectra_Min_Optimisation_Filtered = LumObject.get_CH11Spec_Vec(last_population_3(RowNumber_3,:));
+Metrics_Min_Optimisation_Filtered = OptimisedMetrics_3(RowNumber_3,:);
 
+CodeValues_MinSpectrum = CodeValues_Min_Optimisation_Filtered(find(Metrics_Min_Optimisation_Filtered.MelanopicEDI == min(Metrics_Min_Optimisation_Filtered.MelanopicEDI)),:);
+Spectrum_MinSpectrum = LumObject.get_CH11Spec_Vec(CodeValues_MinSpectrum);
+Metrics_MinSpectrum = MetricsObject.getMetrics_Vec(Spectrum_MinSpectrum);
 
+CodeValues_MAX_Optimisation_Filtered = last_population_2(RowNumber_2,:);
+Spectra_MAX_Optimisation_Filtered = LumObject.get_CH11Spec_Vec(last_population_2(RowNumber_2,:));
+Metrics_MAX_Optimisation_Filtered = OptimisedMetrics_3(RowNumber_2,:);
 
+CodeValues_MAXSpectrum = CodeValues_MAX_Optimisation_Filtered(find(Metrics_MAX_Optimisation_Filtered.MelanopicEDI == min(Metrics_MAX_Optimisation_Filtered.MelanopicEDI)),:);
+Spectrum_MAXSpectrum = LumObject.get_CH11Spec_Vec(CodeValues_MAXSpectrum);
+Metrics_MAXSpectrum = MetricsObject.getMetrics_Vec(Spectrum_MAXSpectrum);
+
+plot((380:780)', Spectrum_MAXSpectrum.Gesamtspektrum,...
+    'Color', 'b', 'DisplayName', 'Maximum mDER'); hold on;
+plot((380:780)', Spectrum_MinSpectrum.Gesamtspektrum,...
+    'Color', 'r', 'DisplayName', 'Minimum mDER');
+
+if ~isempty(Rf)
+    MetricsObject_LuxPy = MetricsClass_LuxPy();
+    MetricsLuxpy = MetricsObject_LuxPy.getMetrics_Vec(OptimisedSpectra_3);
+
+    Metrics_MAXSpectrumEXT = MetricsObject_LuxPy.getMetrics_Vec(Spectrum_MAXSpectrum);
+    Metrics_MINSpectrumEXT =  MetricsObject_LuxPy.getMetrics_Vec(Spectrum_MinSpectrum);
+
+    title('Optimised metameric spectra', 'FontSize', 12)
+    subtitle({
+        ['Max Spectrum - mDER: ' num2str(round(Metrics_MAXSpectrum.MelanopicEDI/qp(1),2)) ', Rf: ' num2str(round(Metrics_MAXSpectrumEXT.Rf_TM30,2))]...
+        ['Min Spectrum - mDER: ' num2str(round(Metrics_MinSpectrum.MelanopicEDI/qp(1),2)) ', Rf: ' num2str(round(Metrics_MINSpectrumEXT.Rf_TM30,2))]...
+        }, 'FontSize', 12)
+else
+
+    title('Optimised metameric spectra', 'FontSize', 12)
+    subtitle({
+        ['Max Spectrum - mDER: ' num2str(round(Metrics_MAXSpectrum.MelanopicEDI/qp(1),2))]...
+        ['Min Spectrum - mDER: ' num2str(round(Metrics_MinSpectrum.MelanopicEDI/qp(1),2))]...
+        }, 'FontSize', 12)
+end
 % =======================================================================================================
 
 
