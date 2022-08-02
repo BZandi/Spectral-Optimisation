@@ -371,7 +371,7 @@ fprintf('========================== \n')
 % considered here. For this, an extended analysis need to be conducted.
 CodeValues_Min_Optimisation_Filtered = last_population_3(RowNumber_3,:);
 Spectra_Min_Optimisation_Filtered = LumObject.get_CH11Spec_Vec(last_population_3(RowNumber_3,:));
-Metrics_Min_Optimisation_Filtered = OptimisedMetrics_3(RowNumber_3,:);
+Metrics_Min_Optimisation_Filtered = MetricsObject.getMetrics_Vec(Spectra_Min_Optimisation_Filtered);
 
 CodeValues_MinSpectrum = CodeValues_Min_Optimisation_Filtered(find(Metrics_Min_Optimisation_Filtered.MelanopicEDI == min(Metrics_Min_Optimisation_Filtered.MelanopicEDI)),:);
 Spectrum_MinSpectrum = LumObject.get_CH11Spec_Vec(CodeValues_MinSpectrum);
@@ -379,15 +379,15 @@ Metrics_MinSpectrum = MetricsObject.getMetrics_Vec(Spectrum_MinSpectrum);
 
 CodeValues_MAX_Optimisation_Filtered = last_population_2(RowNumber_2,:);
 Spectra_MAX_Optimisation_Filtered = LumObject.get_CH11Spec_Vec(last_population_2(RowNumber_2,:));
-Metrics_MAX_Optimisation_Filtered = OptimisedMetrics_3(RowNumber_2,:);
+Metrics_MAX_Optimisation_Filtered = MetricsObject.getMetrics_Vec(Spectra_MAX_Optimisation_Filtered);
 
-CodeValues_MAXSpectrum = CodeValues_MAX_Optimisation_Filtered(find(Metrics_MAX_Optimisation_Filtered.MelanopicEDI == min(Metrics_MAX_Optimisation_Filtered.MelanopicEDI)),:);
+CodeValues_MAXSpectrum = CodeValues_MAX_Optimisation_Filtered(find(Metrics_MAX_Optimisation_Filtered.MelanopicEDI == max(Metrics_MAX_Optimisation_Filtered.MelanopicEDI)),:);
 Spectrum_MAXSpectrum = LumObject.get_CH11Spec_Vec(CodeValues_MAXSpectrum);
 Metrics_MAXSpectrum = MetricsObject.getMetrics_Vec(Spectrum_MAXSpectrum);
 
-plot((380:780)', Spectrum_MAXSpectrum.Gesamtspektrum,...
+plot((380:780)', Spectrum_MAXSpectrum{:,2},...
     'Color', 'b', 'DisplayName', 'Maximum mDER'); hold on;
-plot((380:780)', Spectrum_MinSpectrum.Gesamtspektrum,...
+plot((380:780)', Spectrum_MinSpectrum{:,2},...
     'Color', 'r', 'DisplayName', 'Minimum mDER');
 legend('FontSize', 12);
 
@@ -400,14 +400,14 @@ if ~isempty(Rf)
 
     title('Optimised metameric spectra', 'FontSize', 12)
     subtitle({
-        ['Max Spectrum - mDER: ' num2str(round(Metrics_MAXSpectrum.MelanopicEDI/qp(1),2)) ', Rf: ' num2str(round(Metrics_MAXSpectrumEXT.Rf_TM30,2))]...
-        ['Min Spectrum - mDER: ' num2str(round(Metrics_MinSpectrum.MelanopicEDI/qp(1),2)) ', Rf: ' num2str(round(Metrics_MINSpectrumEXT.Rf_TM30,2))]...
+        ['Max Spectrum - mDER: ' num2str(round(Metrics_MAXSpectrum(1,:).MelanopicEDI/qp(1),3)) ', Rf: ' num2str(round(Metrics_MAXSpectrumEXT(1,:).Rf_TM30,3))]...
+        ['Min Spectrum - mDER: ' num2str(round(Metrics_MinSpectrum(1,:).MelanopicEDI/qp(1),3)) ', Rf: ' num2str(round(Metrics_MINSpectrumEXT(1,:).Rf_TM30,3))]...
         }, 'FontSize', 12)
 else
     title('Optimised metameric spectra', 'FontSize', 12)
     subtitle({
-        ['Max Spectrum - mDER: ' num2str(round(Metrics_MAXSpectrum.MelanopicEDI/qp(1),2))]...
-        ['Min Spectrum - mDER: ' num2str(round(Metrics_MinSpectrum.MelanopicEDI/qp(1),2))]...
+        ['Max Spectrum - mDER: ' num2str(round(Metrics_MAXSpectrum(1,:).MelanopicEDI/qp(1),3))]...
+        ['Min Spectrum - mDER: ' num2str(round(Metrics_MinSpectrum(1,:).MelanopicEDI/qp(1),3))]...
         }, 'FontSize', 12)
 end
 % =======================================================================================================
