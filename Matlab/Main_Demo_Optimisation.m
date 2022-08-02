@@ -389,6 +389,7 @@ plot((380:780)', Spectrum_MAXSpectrum.Gesamtspektrum,...
     'Color', 'b', 'DisplayName', 'Maximum mDER'); hold on;
 plot((380:780)', Spectrum_MinSpectrum.Gesamtspektrum,...
     'Color', 'r', 'DisplayName', 'Minimum mDER');
+legend('FontSize', 12);
 
 if ~isempty(Rf)
     MetricsObject_LuxPy = MetricsClass_LuxPy();
@@ -403,7 +404,6 @@ if ~isempty(Rf)
         ['Min Spectrum - mDER: ' num2str(round(Metrics_MinSpectrum.MelanopicEDI/qp(1),2)) ', Rf: ' num2str(round(Metrics_MINSpectrumEXT.Rf_TM30,2))]...
         }, 'FontSize', 12)
 else
-
     title('Optimised metameric spectra', 'FontSize', 12)
     subtitle({
         ['Max Spectrum - mDER: ' num2str(round(Metrics_MAXSpectrum.MelanopicEDI/qp(1),2))]...
