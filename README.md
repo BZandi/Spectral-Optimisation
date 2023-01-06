@@ -1,10 +1,6 @@
 # Spectral optimisation pipeline for multi-primary LED lighting systems 
 In this repository, the Matlab code for spectrally optimising a 15-channel LED luminaire, using a multi-objective optimisation method is provided. The current version of this code can optimise a spectrum with the objectives luminance and the CIExy-1931 chromaticity coordinates.
 
-**Correspondence:** [zandi@lichttechnik.tu-darmstadt.de](mailto:zandi@lichttechnik.tu-darmstadt.de)<br>
-**Google Scholar Profile:** [Babak Zandi](https://scholar.google.de/citations?user=LSA7SdAAAAAJ&hl=de)<br>
-**Twitter:** [@BkZandi](https://twitter.com/bkzandi)
-
 ## Usage
 
 In the `Matlab/Main.m file`, the target luminance and the target chromaticity coordinates can be adjusted through the value `qp`. For example, if you want to optimise a spectrum that yields a luminance of 200 cd/m2 with a CIExy-1931 chromaticity coordinate of (0.333, 0.333), type `qp = [200, 0.333, 0.333]`. In addition, you need to set the tolerance criteria. The tolerances need to be set in the `Matlab/Main.m` file and the `Matlab/A01_Methods/runOptim_GA.m` (see the Method `myOutputFunction(options, state, flag)`).
